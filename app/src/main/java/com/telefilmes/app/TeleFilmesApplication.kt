@@ -1,0 +1,26 @@
+package com.telefilmes.app
+
+import android.app.Application
+import com.telefilmes.app.data.database.TeleFilmesDatabase
+import com.telefilmes.app.data.repository.MediaRepository
+import com.telefilmes.app.telegram.TelegramClient
+
+class TeleFilmesApplication : Application() {
+    
+    val database by lazy { TeleFilmesDatabase.getDatabase(this) }
+    
+    val mediaRepository by lazy {
+        MediaRepository(
+            database.seriesDao(),
+            database.seasonDao(),
+            database.episodeDao()
+        )
+    }
+    
+    val telegramClient by lazy { TelegramClient(this) }
+    
+    override fun onCreate() {
+        super.onCreate()
+        System.loadLibrary("tdjni")
+    }
+}

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TeleFilmes</string>
+    
+    <!-- Navigation -->
+    <string name="nav_home">Início</string>
+    <string name="nav_chats">Chats</string>
+    
+    <!-- Home Screen -->
+    <string name="home_title">Minhas Séries e Filmes</string>
+    <string name="add_series">Adicionar Série</string>
+    <string name="empty_series_list">Nenhuma série adicionada ainda</string>
+    <string name="empty_series_description">Toque no botão + para criar sua primeira série</string>
+    
+    <!-- Series Details -->
+    <string name="seasons">Temporadas</string>
+    <string name="add_season">Adicionar Temporada</string>
+    <string name="season_number">Temporada %d</string>
+    <string name="episodes_count">%d episódios</string>
+    <string name="empty_seasons">Nenhuma temporada adicionada</string>
+    
+    <!-- Season Details -->
+    <string name="episodes">Episódios</string>
+    <string name="episode_number">Episódio %d</string>
+    <string name="empty_episodes">Nenhum episódio adicionado</string>
+    <string name="add_from_telegram">Adicionar do Telegram</string>
+    
+    <!-- Telegram Chats -->
+    <string name="chats_title">Chats do Telegram</string>
+    <string name="select_chat">Selecione um chat</string>
+    <string name="loading_chats">Carregando chats...</string>
+    <string name="save_video">Salvar Vídeo</string>
+    <string name="select_destination">Selecionar Destino</string>
+    
+    <!-- Login -->
+    <string name="login_title">Entrar no Telegram</string>
+    <string name="phone_number">Número de Telefone</string>
+    <string name="phone_hint">+55 11 99999-9999</string>
+    <string name="send_code">Enviar Código</string>
+    <string name="verification_code">Código de Verificação</string>
+    <string name="code_hint">12345</string>
+    <string name="verify">Verificar</string>
+    <string name="password">Senha (2FA)</string>
+    <string name="password_hint">Senha</string>
+    <string name="login">Entrar</string>
+    
+    <!-- Dialogs -->
+    <string name="dialog_create_series">Criar Nova Série</string>
+    <string name="dialog_create_season">Criar Nova Temporada</string>
+    <string name="series_name">Nome da Série</string>
+    <string name="season_name">Nome da Temporada</string>
+    <string name="cancel">Cancelar</string>
+    <string name="create">Criar</string>
+    <string name="save">Salvar</string>
+    <string name="delete">Excluir</string>
+    
+    <!-- Messages -->
+    <string name="video_saved">Vídeo salvo com sucesso!</string>
+    <string name="error_occurred">Ocorreu um erro</string>
+    <string name="connecting">Conectando...</string>
+</resources>
