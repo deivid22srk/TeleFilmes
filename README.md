@@ -64,15 +64,32 @@ Para baixar o APK gerado:
 
 ## 🔑 Configuração do Telegram
 
-O app usa as credenciais da API do Telegram. Por padrão, está usando valores de exemplo:
-- **API ID**: 94575
-- **API Hash**: a3406de8d171bb422bb6ddf3bbd800e2
+⚠️ **IMPORTANTE**: A versão atual usa uma **implementação mock** do cliente Telegram com dados de exemplo.
 
-⚠️ **Importante**: Para uso em produção, obtenha suas próprias credenciais em https://my.telegram.org/apps
+### Por que Mock?
+A biblioteca oficial TDLib (`org.drinkless:tdlib`) não está disponível no Maven Central. Para o app funcionar de verdade com o Telegram, você precisa:
 
-Para configurar suas credenciais:
-1. Vá em `app/src/main/java/com/telefilmes/app/telegram/TelegramClient.kt`
-2. Substitua `apiId` e `apiHash` pelos seus valores
+### Opção 1: Usar TDLib Oficial (Recomendado)
+1. **Compilar TDLib** a partir do código-fonte:
+   - Clone: https://github.com/tdlib/td
+   - Siga as instruções para Android
+   - Copie os arquivos `.so` para `app/src/main/jniLibs/`
+
+2. **Adicionar dependência** (se disponível localmente):
+   ```kotlin
+   // Em app/build.gradle.kts
+   implementation(files("libs/tdlib.jar"))
+   ```
+
+3. **Descomentar código** em:
+   - `TeleFilmesApplication.kt`: `System.loadLibrary("tdjni")`
+   - Restaurar implementação completa em `TelegramClient.kt`
+
+### Opção 2: Usar Telegram Bot API
+Implementar usando a API REST do Telegram (mais simples, mas com limitações)
+
+### Opção 3: Usar Implementação Mock (Atual)
+O app funciona com dados de exemplo para demonstração da UI
 
 ## 📱 Como Usar
 
@@ -122,9 +139,10 @@ Desenvolvido por [@deivid22srk](https://github.com/deivid22srk)
 
 ## 🐛 Problemas Conhecidos
 
-- A integração com TDLib requer a biblioteca nativa `libtdjni.so`
-- Alguns recursos do Telegram podem estar limitados
-- A funcionalidade de salvar vídeos ainda está em desenvolvimento
+- ✅ **Build Funcionando**: O app compila com implementação mock
+- ⚠️ **TDLib Mock**: Atualmente usando dados de exemplo, não conecta ao Telegram real
+- 📱 **Funcionalidade Limitada**: Salvar vídeos funciona apenas com IDs mock
+- 🔧 **Integração Real**: Requer adicionar TDLib manualmente (veja seção acima)
 
 ## 🔮 Roadmap
 
