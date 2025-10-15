@@ -81,8 +81,9 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
     
-    // Telegram TDLib
-    implementation("org.drinkless:tdlib:1.8.0")
+    // Telegram TDLib (commented out - not available in Maven Central)
+    // TODO: Add TDLib manually by compiling from source or using prebuilt binaries
+    // implementation("org.drinkless:tdlib:1.8.0")
     
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")

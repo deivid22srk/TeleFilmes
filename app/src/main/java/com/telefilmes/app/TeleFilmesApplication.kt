@@ -21,6 +21,7 @@ class TeleFilmesApplication : Application() {
     
     override fun onCreate() {
         super.onCreate()
-        System.loadLibrary("tdjni")
+        // TODO: Load TDLib native library when available
+        // System.loadLibrary("tdjni")
     }
 }
