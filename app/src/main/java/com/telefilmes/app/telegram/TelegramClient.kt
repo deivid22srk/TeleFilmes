@@ -31,8 +31,20 @@ class TelegramClient(private val context: Context) {
     
     companion object {
         private const val TAG = "TelegramClient"
-        private const val API_ID = 94575
-        private const val API_HASH = "a3406de8d171bb422bb6ddf3bbd800e2"
+        
+        // ⚠️ IMPORTANTE: Estas credenciais estão DESATUALIZADAS e causam erro UPDATE_APP_TO_LOGIN
+        // Para corrigir:
+        // 1. Acesse: https://my.telegram.org/apps
+        // 2. Crie uma aplicação
+        // 3. Substitua os valores abaixo pelos seus
+        // 
+        // NUNCA compartilhe suas credenciais publicamente!
+        private const val API_ID = 94575  // ❌ Substitua pelo seu api_id
+        private const val API_HASH = "a3406de8d171bb422bb6ddf3bbd800e2"  // ❌ Substitua pelo seu api_hash
+        
+        // Opção para teste: use servidor de teste do Telegram
+        // Mude para 'true' apenas para testes (não conecta ao Telegram real)
+        private const val USE_TEST_DC = false
     }
     
     init {
@@ -82,7 +94,7 @@ class TelegramClient(private val context: Context) {
         when (state) {
             is TdApi.AuthorizationStateWaitTdlibParameters -> {
                 val parameters = TdApi.TdlibParameters().apply {
-                    useTestDc = false
+                    useTestDc = USE_TEST_DC  // Mude para true para usar servidor de teste
                     databaseDirectory = context.filesDir.absolutePath + "/tdlib"
                     filesDirectory = context.filesDir.absolutePath + "/tdlib_files"
                     useFileDatabase = true
