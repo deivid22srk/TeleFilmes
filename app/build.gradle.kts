@@ -85,11 +85,13 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
     
-    // Telegram TDLib - Using TDLight (Android compatible)
-    implementation("it.tdlight:tdlight-java:3.2.0.211+td.1.8.24")
-    implementation("it.tdlight:tdlight-natives-android-aarch64:4.0.371+td.1.8.24")
-    implementation("it.tdlight:tdlight-natives-android-armv7:4.0.371+td.1.8.24")
-    implementation("it.tdlight:tdlight-natives-android-x86-64:4.0.371+td.1.8.24")
+    // Telegram TDLib - NOT available in Maven repositories
+    // Using mock implementation for now (see TelegramClient.kt)
+    // TODO: To use real TDLib, follow guide in TDLIB_SETUP.md
+    // implementation("it.tdlight:tdlight-java:3.2.0.211+td.1.8.24")
+    // implementation("it.tdlight:tdlight-natives-android-aarch64:4.0.371+td.1.8.24")
+    // implementation("it.tdlight:tdlight-natives-android-armv7:4.0.371+td.1.8.24")
+    // implementation("it.tdlight:tdlight-natives-android-x86-64:4.0.371+td.1.8.24")
     
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
