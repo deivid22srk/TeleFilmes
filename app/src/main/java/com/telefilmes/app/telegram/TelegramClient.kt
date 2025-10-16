@@ -9,10 +9,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.drinkless.td.libcore.telegram.Client
+import org.drinkless.td.libcore.telegram.TdApi
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 class TelegramClient(private val context: Context) {
     
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var client: Client? = null
+    private val currentQueryId = AtomicLong()
     
     private val _authState = MutableStateFlow<TelegramAuthState>(TelegramAuthState.Idle)
     val authState: StateFlow<TelegramAuthState> = _authState.asStateFlow()
@@ -20,8 +26,8 @@ class TelegramClient(private val context: Context) {
     private val _chats = MutableStateFlow<List<TelegramChat>>(emptyList())
     val chats: StateFlow<List<TelegramChat>> = _chats.asStateFlow()
     
-    private val chatCache = mutableMapOf<Long, TelegramChat>()
-    private val messageCache = mutableMapOf<Long, MutableList<TelegramMessage>>()
+    private val chatCache = ConcurrentHashMap<Long, TelegramChat>()
+    private val messageCache = ConcurrentHashMap<Long, MutableList<TelegramMessage>>()
     
     companion object {
         private const val TAG = "TelegramClient"
@@ -30,15 +36,169 @@ class TelegramClient(private val context: Context) {
     }
     
     init {
-        Log.d(TAG, "TelegramClient initialized - Using mock data for now")
-        _authState.value = TelegramAuthState.WaitingForPhoneNumber
+        initializeClient()
+    }
+    
+    private fun initializeClient() {
+        scope.launch {
+            try {
+                Client.setLogVerbosityLevel(1)
+                
+                client = Client.create(
+                    { update -> handleUpdate(update) },
+                    { exception -> handleException(exception) },
+                    { exception -> handleException(exception) }
+                )
+                
+                Log.d(TAG, "TelegramClient initialized successfully")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error initializing client", e)
+                _authState.value = TelegramAuthState.Error(e.message ?: "Erro ao inicializar")
+            }
+        }
+    }
+    
+    private fun handleUpdate(update: Any?) {
+        if (update !is TdApi.Object) return
+        
+        when (update) {
+            is TdApi.UpdateAuthorizationState -> {
+                handleAuthorizationState(update.authorizationState)
+            }
+            is TdApi.UpdateNewChat -> {
+                handleNewChat(update.chat)
+            }
+            is TdApi.UpdateChatPosition -> {
+                loadChats()
+            }
+            is TdApi.UpdateNewMessage -> {
+                handleNewMessage(update.message)
+            }
+            else -> {
+                Log.d(TAG, "Update: ${update.javaClass.simpleName}")
+            }
+        }
+    }
+    
+    private fun handleAuthorizationState(state: TdApi.AuthorizationState) {
+        when (state) {
+            is TdApi.AuthorizationStateWaitTdlibParameters -> {
+                val parameters = TdApi.TdlibParameters().apply {
+                    useTestDc = false
+                    databaseDirectory = context.filesDir.absolutePath + "/tdlib"
+                    filesDirectory = context.filesDir.absolutePath + "/tdlib_files"
+                    useFileDatabase = true
+                    useChatInfoDatabase = true
+                    useMessageDatabase = true
+                    useSecretChats = false
+                    apiId = API_ID
+                    apiHash = API_HASH
+                    systemLanguageCode = "pt-BR"
+                    deviceModel = android.os.Build.MODEL
+                    systemVersion = android.os.Build.VERSION.RELEASE
+                    applicationVersion = "1.0"
+                    enableStorageOptimizer = true
+                }
+                send(TdApi.SetTdlibParameters(parameters))
+            }
+            is TdApi.AuthorizationStateWaitEncryptionKey -> {
+                send(TdApi.CheckDatabaseEncryptionKey())
+            }
+            is TdApi.AuthorizationStateWaitPhoneNumber -> {
+                _authState.value = TelegramAuthState.WaitingForPhoneNumber
+            }
+            is TdApi.AuthorizationStateWaitCode -> {
+                _authState.value = TelegramAuthState.WaitingForCode("")
+            }
+            is TdApi.AuthorizationStateWaitPassword -> {
+                _authState.value = TelegramAuthState.WaitingForPassword("")
+            }
+            is TdApi.AuthorizationStateReady -> {
+                _authState.value = TelegramAuthState.Authenticated
+                loadChats()
+            }
+            is TdApi.AuthorizationStateClosed -> {
+                _authState.value = TelegramAuthState.Idle
+            }
+            else -> {
+                Log.d(TAG, "Auth state: ${state.javaClass.simpleName}")
+            }
+        }
+    }
+    
+    private fun handleNewChat(chat: TdApi.Chat) {
+        val telegramChat = TelegramChat(
+            id = chat.id,
+            title = chat.title,
+            type = when (chat.type) {
+                is TdApi.ChatTypePrivate -> "private"
+                is TdApi.ChatTypeBasicGroup -> "group"
+                is TdApi.ChatTypeSupergroup -> "supergroup"
+                is TdApi.ChatTypeSecret -> "secret"
+                else -> "unknown"
+            },
+            photoPath = null,
+            lastMessage = chat.lastMessage?.content?.let {
+                when (it) {
+                    is TdApi.MessageText -> it.text.text
+                    is TdApi.MessageVideo -> "[Vídeo]"
+                    is TdApi.MessagePhoto -> "[Foto]"
+                    else -> ""
+                }
+            }
+        )
+        
+        chatCache[chat.id] = telegramChat
+        _chats.value = chatCache.values.toList()
+    }
+    
+    private fun handleNewMessage(message: TdApi.Message) {
+        val telegramMessage = convertMessage(message)
+        
+        messageCache.getOrPut(message.chatId) { mutableListOf() }.add(telegramMessage)
+    }
+    
+    private fun convertMessage(message: TdApi.Message): TelegramMessage {
+        val content = message.content
+        val hasVideo = content is TdApi.MessageVideo
+        
+        return TelegramMessage(
+            id = message.id,
+            chatId = message.chatId,
+            text = when (content) {
+                is TdApi.MessageText -> content.text.text
+                is TdApi.MessageVideo -> content.caption.text
+                else -> ""
+            },
+            date = message.date,
+            hasVideo = hasVideo,
+            videoFileId = if (hasVideo) (content as TdApi.MessageVideo).video.video.id.toString() else null,
+            videoDuration = if (hasVideo) (content as TdApi.MessageVideo).video.duration else 0,
+            videoSize = if (hasVideo) (content as TdApi.MessageVideo).video.video.size.toLong() else 0L
+        )
+    }
+    
+    private fun handleException(exception: Throwable?) {
+        exception?.let {
+            Log.e(TAG, "TDLib error", it)
+            _authState.value = TelegramAuthState.Error(it.message ?: "Unknown error")
+        }
+    }
+    
+    private fun send(function: TdApi.Function<*>) {
+        client?.send(function, null)
     }
     
     fun setPhoneNumber(phoneNumber: String) {
         scope.launch {
             try {
-                Log.d(TAG, "Setting phone number: $phoneNumber")
-                _authState.value = TelegramAuthState.WaitingForCode(phoneNumber)
+                val settings = TdApi.PhoneNumberAuthenticationSettings().apply {
+                    allowFlashCall = false
+                    isCurrentPhoneNumber = false
+                    allowSmsRetrieverApi = false
+                }
+                send(TdApi.SetAuthenticationPhoneNumber(phoneNumber, settings))
+                Log.d(TAG, "Phone number sent: $phoneNumber")
             } catch (e: Exception) {
                 Log.e(TAG, "Error setting phone number", e)
                 _authState.value = TelegramAuthState.Error(e.message ?: "Erro ao enviar número")
@@ -49,13 +209,8 @@ class TelegramClient(private val context: Context) {
     fun checkCode(code: String) {
         scope.launch {
             try {
-                Log.d(TAG, "Checking code: $code")
-                if (code.length >= 5) {
-                    _authState.value = TelegramAuthState.Authenticated
-                    loadMockChats()
-                } else {
-                    _authState.value = TelegramAuthState.Error("Código deve ter pelo menos 5 dígitos")
-                }
+                send(TdApi.CheckAuthenticationCode(code))
+                Log.d(TAG, "Code sent: $code")
             } catch (e: Exception) {
                 Log.e(TAG, "Error checking code", e)
                 _authState.value = TelegramAuthState.Error(e.message ?: "Código inválido")
@@ -66,13 +221,8 @@ class TelegramClient(private val context: Context) {
     fun checkPassword(password: String) {
         scope.launch {
             try {
-                Log.d(TAG, "Checking password")
-                if (password.isNotBlank()) {
-                    _authState.value = TelegramAuthState.Authenticated
-                    loadMockChats()
-                } else {
-                    _authState.value = TelegramAuthState.Error("Senha não pode estar vazia")
-                }
+                send(TdApi.CheckAuthenticationPassword(password))
+                Log.d(TAG, "Password sent")
             } catch (e: Exception) {
                 Log.e(TAG, "Error checking password", e)
                 _authState.value = TelegramAuthState.Error(e.message ?: "Senha inválida")
@@ -81,92 +231,40 @@ class TelegramClient(private val context: Context) {
     }
     
     fun loadChats() {
-        if (_authState.value is TelegramAuthState.Authenticated) {
-            loadMockChats()
-        }
-    }
-    
-    private fun loadMockChats() {
         scope.launch {
             try {
-                Log.d(TAG, "Loading mock chats")
-                chatCache.clear()
-                
-                val mockChats = listOf(
-                    TelegramChat(
-                        id = 1,
-                        title = "Filmes e Séries HD",
-                        type = "group",
-                        lastMessage = "Novo episódio disponível"
-                    ),
-                    TelegramChat(
-                        id = 2,
-                        title = "Canal de Séries",
-                        type = "channel",
-                        lastMessage = "Breaking Bad S05E16"
-                    ),
-                    TelegramChat(
-                        id = 3,
-                        title = "Grupo Filmes 4K",
-                        type = "supergroup",
-                        lastMessage = "[Vídeo] Avatar 2"
-                    ),
-                    TelegramChat(
-                        id = 4,
-                        title = "Anime Brasil",
-                        type = "group",
-                        lastMessage = "One Piece - Episódio 1100"
-                    )
-                )
-                
-                mockChats.forEach { chat ->
-                    chatCache[chat.id] = chat
-                }
-                
-                _chats.value = chatCache.values.toList()
-                
-                generateMockMessages()
-                
-                Log.d(TAG, "Loaded ${mockChats.size} mock chats")
+                send(TdApi.LoadChats(TdApi.ChatListMain(), 100))
+                Log.d(TAG, "Loading chats...")
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading chats", e)
             }
         }
     }
     
-    private fun generateMockMessages() {
-        val currentTime = (System.currentTimeMillis() / 1000).toInt()
-        
-        chatCache.keys.forEach { chatId ->
-            val messages = mutableListOf<TelegramMessage>()
-            
-            for (i in 1..10) {
-                messages.add(
-                    TelegramMessage(
-                        id = (chatId * 100 + i),
-                        chatId = chatId,
-                        text = "Vídeo ${i} - Episódio ${i}",
-                        date = currentTime - (i * 3600),
-                        hasVideo = true,
-                        videoFileId = "mock_file_${chatId}_$i",
-                        videoDuration = 1800 + (i * 120),
-                        videoSize = 50000000L + (i * 5000000L)
-                    )
-                )
-            }
-            
-            messageCache[chatId] = messages
-        }
-    }
-    
     fun getChatMessages(chatId: Long, limit: Int = 50): List<TelegramMessage> {
-        Log.d(TAG, "Getting messages for chat: $chatId")
-        return messageCache[chatId]?.take(limit) ?: emptyList()
+        scope.launch {
+            try {
+                client?.send(TdApi.GetChatHistory(chatId, 0, 0, limit, false)) { result ->
+                    if (result is TdApi.Messages) {
+                        val messages = result.messages.map { message ->
+                            convertMessage(message as TdApi.Message)
+                        }
+                        messageCache[chatId] = messages.toMutableList()
+                    }
+                }
+                Log.d(TAG, "Loading messages for chat: $chatId")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting chat messages", e)
+            }
+        }
+        
+        return messageCache[chatId]?.reversed() ?: emptyList()
     }
     
     fun downloadFile(fileId: Int) {
         scope.launch {
             try {
+                send(TdApi.DownloadFile(fileId, 32, 0, 0, true))
                 Log.d(TAG, "Downloading file: $fileId")
             } catch (e: Exception) {
                 Log.e(TAG, "Error downloading file", e)
@@ -177,11 +275,12 @@ class TelegramClient(private val context: Context) {
     fun logout() {
         scope.launch {
             try {
-                Log.d(TAG, "Logging out")
+                send(TdApi.LogOut())
                 _authState.value = TelegramAuthState.Idle
                 chatCache.clear()
                 messageCache.clear()
                 _chats.value = emptyList()
+                Log.d(TAG, "Logged out")
             } catch (e: Exception) {
                 Log.e(TAG, "Error logging out", e)
             }
@@ -191,7 +290,8 @@ class TelegramClient(private val context: Context) {
     fun close() {
         scope.launch {
             try {
-                Log.d(TAG, "Closing client")
+                client?.close()
+                Log.d(TAG, "Client closed")
             } catch (e: Exception) {
                 Log.e(TAG, "Error closing client", e)
             }
