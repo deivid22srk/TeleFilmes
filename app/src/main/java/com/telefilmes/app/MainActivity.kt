@@ -126,8 +126,9 @@ class MainActivity : ComponentActivity() {
                             
                             val messages by chatMessagesViewModel.messages.collectAsState()
                             val seasons by chatMessagesViewModel.allSeasons.collectAsState()
+                            val chatId = it.arguments?.getString("chatId")?.toLongOrNull() ?: 0L
                             val chatTitle = telegramViewModel.chats.collectAsState().value
-                                .find { it.id == it.arguments?.getString("chatId")?.toLongOrNull() }
+                                .find { chat -> chat.id == chatId }
                                 ?.title ?: "Chat"
                             
                             ChatMessagesScreen(

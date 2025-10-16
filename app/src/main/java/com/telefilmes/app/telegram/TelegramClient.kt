@@ -68,9 +68,6 @@ class TelegramClient(private val context: Context) {
             is TdApi.UpdateNewChat -> {
                 handleNewChat(update.chat)
             }
-            is TdApi.UpdateChatPosition -> {
-                loadChats()
-            }
             is TdApi.UpdateNewMessage -> {
                 handleNewMessage(update.message)
             }
@@ -185,7 +182,7 @@ class TelegramClient(private val context: Context) {
         }
     }
     
-    private fun send(function: TdApi.Function<*>) {
+    private fun send(function: TdApi.Function) {
         client?.send(function, null)
     }
     
@@ -233,7 +230,7 @@ class TelegramClient(private val context: Context) {
     fun loadChats() {
         scope.launch {
             try {
-                send(TdApi.LoadChats(TdApi.ChatListMain(), 100))
+                send(TdApi.GetChats(TdApi.ChatListMain(), 100))
                 Log.d(TAG, "Loading chats...")
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading chats", e)
