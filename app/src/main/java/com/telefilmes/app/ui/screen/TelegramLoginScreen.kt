@@ -76,6 +76,7 @@ private fun PhoneNumberInput(
     onSendCode: (String) -> Unit
 ) {
     var phoneNumber by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
     
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -100,15 +101,28 @@ private fun PhoneNumberInput(
             placeholder = { Text(stringResource(R.string.phone_hint)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             singleLine = true,
+            enabled = !isLoading,
             modifier = Modifier.fillMaxWidth()
         )
         
         Button(
-            onClick = { onSendCode(phoneNumber) },
-            enabled = phoneNumber.isNotBlank(),
+            onClick = { 
+                if (!isLoading) {
+                    isLoading = true
+                    onSendCode(phoneNumber)
+                }
+            },
+            enabled = phoneNumber.isNotBlank() && !isLoading,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(stringResource(R.string.send_code))
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text(stringResource(R.string.send_code))
+            }
         }
     }
 }
@@ -118,6 +132,7 @@ private fun CodeInput(
     onVerifyCode: (String) -> Unit
 ) {
     var code by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
     
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -142,15 +157,28 @@ private fun CodeInput(
             placeholder = { Text(stringResource(R.string.code_hint)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
+            enabled = !isLoading,
             modifier = Modifier.fillMaxWidth()
         )
         
         Button(
-            onClick = { onVerifyCode(code) },
-            enabled = code.isNotBlank(),
+            onClick = { 
+                if (!isLoading) {
+                    isLoading = true
+                    onVerifyCode(code)
+                }
+            },
+            enabled = code.isNotBlank() && !isLoading,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(stringResource(R.string.verify))
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text(stringResource(R.string.verify))
+            }
         }
     }
 }
@@ -160,6 +188,7 @@ private fun PasswordInput(
     onVerifyPassword: (String) -> Unit
 ) {
     var password by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
     
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -185,15 +214,28 @@ private fun PasswordInput(
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true,
+            enabled = !isLoading,
             modifier = Modifier.fillMaxWidth()
         )
         
         Button(
-            onClick = { onVerifyPassword(password) },
-            enabled = password.isNotBlank(),
+            onClick = { 
+                if (!isLoading) {
+                    isLoading = true
+                    onVerifyPassword(password)
+                }
+            },
+            enabled = password.isNotBlank() && !isLoading,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(stringResource(R.string.login))
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text(stringResource(R.string.login))
+            }
         }
     }
 }

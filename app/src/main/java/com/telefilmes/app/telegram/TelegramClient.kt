@@ -78,6 +78,7 @@ class TelegramClient(private val context: Context) {
     }
     
     private fun handleAuthorizationState(state: TdApi.AuthorizationState) {
+        Log.d(TAG, "Authorization state changed: ${state.javaClass.simpleName}")
         when (state) {
             is TdApi.AuthorizationStateWaitTdlibParameters -> {
                 val parameters = TdApi.TdlibParameters().apply {
@@ -102,19 +103,24 @@ class TelegramClient(private val context: Context) {
                 send(TdApi.CheckDatabaseEncryptionKey())
             }
             is TdApi.AuthorizationStateWaitPhoneNumber -> {
+                Log.d(TAG, "Waiting for phone number")
                 _authState.value = TelegramAuthState.WaitingForPhoneNumber
             }
             is TdApi.AuthorizationStateWaitCode -> {
+                Log.d(TAG, "Waiting for verification code")
                 _authState.value = TelegramAuthState.WaitingForCode("")
             }
             is TdApi.AuthorizationStateWaitPassword -> {
+                Log.d(TAG, "Waiting for password")
                 _authState.value = TelegramAuthState.WaitingForPassword("")
             }
             is TdApi.AuthorizationStateReady -> {
+                Log.d(TAG, "Authentication successful")
                 _authState.value = TelegramAuthState.Authenticated
                 loadChats()
             }
             is TdApi.AuthorizationStateClosed -> {
+                Log.d(TAG, "Client closed")
                 _authState.value = TelegramAuthState.Idle
             }
             else -> {
@@ -183,7 +189,12 @@ class TelegramClient(private val context: Context) {
     }
     
     private fun send(function: TdApi.Function) {
-        client?.send(function, null)
+        client?.send(function) { result ->
+            if (result is TdApi.Error) {
+                Log.e(TAG, "TDLib error: ${result.code} - ${result.message}")
+                _authState.value = TelegramAuthState.Error(result.message)
+            }
+        }
     }
     
     fun setPhoneNumber(phoneNumber: String) {
