@@ -51,8 +51,12 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/INDEX.LIST"
+            excludes += "/META-INF/DEPENDENCIES"
         }
     }
+    
+    ndkVersion = "25.1.8937393"
 }
 
 dependencies {
@@ -81,9 +85,11 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
     
-    // Telegram TDLib (commented out - not available in Maven Central)
-    // TODO: Add TDLib manually by compiling from source or using prebuilt binaries
-    // implementation("org.drinkless:tdlib:1.8.0")
+    // Telegram TDLib - Using TDLight (Android compatible)
+    implementation("it.tdlight:tdlight-java:3.2.0.211+td.1.8.24")
+    implementation("it.tdlight:tdlight-natives-android-aarch64:4.0.371+td.1.8.24")
+    implementation("it.tdlight:tdlight-natives-android-armv7:4.0.371+td.1.8.24")
+    implementation("it.tdlight:tdlight-natives-android-x86-64:4.0.371+td.1.8.24")
     
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")

@@ -21,7 +21,10 @@ class TeleFilmesApplication : Application() {
     
     override fun onCreate() {
         super.onCreate()
-        // TODO: Load TDLib native library when available
-        // System.loadLibrary("tdjni")
+        try {
+            System.loadLibrary("tdjni")
+        } catch (e: UnsatisfiedLinkError) {
+            android.util.Log.e("TeleFilmesApp", "TDLib native library not found", e)
+        }
     }
 }

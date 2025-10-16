@@ -7,6 +7,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -105,6 +107,40 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onLoginRequired = {
                                     navController.navigate(Screen.TelegramLogin.route)
+                                }
+                            )
+                        }
+                        
+                        composable(
+                            route = Screen.ChatMessages.route,
+                            arguments = listOf(
+                                navArgument("chatId") { type = NavType.StringType }
+                            )
+                        ) {
+                            val chatMessagesViewModel: ChatMessagesViewModel = viewModel(
+                                factory = ChatMessagesViewModelFactory(
+                                    app.telegramClient,
+                                    app.mediaRepository
+                                )
+                            )
+                            
+                            val messages by chatMessagesViewModel.messages.collectAsState()
+                            val seasons by chatMessagesViewModel.allSeasons.collectAsState()
+                            val chatTitle = telegramViewModel.chats.collectAsState().value
+                                .find { it.id == it.arguments?.getString("chatId")?.toLongOrNull() }
+                                ?.title ?: "Chat"
+                            
+                            ChatMessagesScreen(
+                                chatId = it.arguments?.getString("chatId")?.toLongOrNull() ?: 0L,
+                                chatTitle = chatTitle,
+                                messages = messages,
+                                availableSeasons = seasons,
+                                onBackClick = { navController.navigateUp() },
+                                onSaveVideo = { message, seasonId ->
+                                    chatMessagesViewModel.saveVideoToSeason(message, seasonId)
+                                },
+                                onDownloadVideo = { fileId ->
+                                    chatMessagesViewModel.downloadVideo(fileId)
                                 }
                             )
                         }
