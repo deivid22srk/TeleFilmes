@@ -14,7 +14,11 @@ import org.drinkless.td.libcore.telegram.TdApi
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
-class TelegramClient(private val context: Context) {
+class TelegramClient(
+    private val context: Context,
+    private var apiId: Int = DEFAULT_API_ID,
+    private var apiHash: String = DEFAULT_API_HASH
+) {
     
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var client: Client? = null
@@ -32,18 +36,8 @@ class TelegramClient(private val context: Context) {
     companion object {
         private const val TAG = "TelegramClient"
         
-        // ⚠️ IMPORTANTE: Estas credenciais estão DESATUALIZADAS e causam erro UPDATE_APP_TO_LOGIN
-        // Para corrigir:
-        // 1. Acesse: https://my.telegram.org/apps
-        // 2. Crie uma aplicação
-        // 3. Substitua os valores abaixo pelos seus
-        // 
-        // NUNCA compartilhe suas credenciais publicamente!
-        private const val API_ID = 94575  // ❌ Substitua pelo seu api_id
-        private const val API_HASH = "a3406de8d171bb422bb6ddf3bbd800e2"  // ❌ Substitua pelo seu api_hash
-        
-        // Opção para teste: use servidor de teste do Telegram
-        // Mude para 'true' apenas para testes (não conecta ao Telegram real)
+        const val DEFAULT_API_ID = 94575
+        const val DEFAULT_API_HASH = "a3406de8d171bb422bb6ddf3bbd800e2"
         private const val USE_TEST_DC = false
     }
     
@@ -101,8 +95,8 @@ class TelegramClient(private val context: Context) {
                     useChatInfoDatabase = true
                     useMessageDatabase = true
                     useSecretChats = false
-                    apiId = API_ID
-                    apiHash = API_HASH
+                    apiId = this@TelegramClient.apiId
+                    apiHash = this@TelegramClient.apiHash
                     systemLanguageCode = "pt-BR"
                     deviceModel = android.os.Build.MODEL
                     systemVersion = android.os.Build.VERSION.RELEASE
@@ -304,6 +298,19 @@ class TelegramClient(private val context: Context) {
             } catch (e: Exception) {
                 Log.e(TAG, "Error logging out", e)
             }
+        }
+    }
+    
+    fun updateCredentials(newApiId: Int, newApiHash: String) {
+        apiId = newApiId
+        apiHash = newApiHash
+        Log.d(TAG, "Credentials updated. Reinitializing client...")
+        
+        close()
+        
+        scope.launch {
+            kotlinx.coroutines.delay(500)
+            initializeClient()
         }
     }
     

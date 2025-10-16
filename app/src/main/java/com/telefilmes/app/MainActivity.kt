@@ -44,6 +44,10 @@ class MainActivity : ComponentActivity() {
                         factory = TelegramViewModelFactory(app.telegramClient)
                     )
                     
+                    val telegramConfigViewModel: TelegramConfigViewModel = viewModel(
+                        factory = TelegramConfigViewModelFactory(app.telegramConfigRepository)
+                    )
+                    
                     NavHost(
                         navController = navController,
                         startDestination = Screen.Home.route
@@ -152,7 +156,28 @@ class MainActivity : ComponentActivity() {
                                 onLoginSuccess = {
                                     navController.popBackStack()
                                     navController.navigate(Screen.TelegramChats.route)
+                                },
+                                onConfigureApi = {
+                                    navController.navigate(Screen.TelegramApiConfig.route)
                                 }
+                            )
+                        }
+                        
+                        composable(Screen.TelegramApiConfig.route) {
+                            val apiId by telegramConfigViewModel.apiId.collectAsState()
+                            val apiHash by telegramConfigViewModel.apiHash.collectAsState()
+                            val hasCustomCredentials by telegramConfigViewModel.hasCustomCredentials.collectAsState()
+                            
+                            TelegramApiConfigScreen(
+                                currentApiId = apiId,
+                                currentApiHash = apiHash,
+                                hasCustomCredentials = hasCustomCredentials,
+                                onSave = { newApiId, newApiHash ->
+                                    telegramConfigViewModel.saveCredentials(newApiId, newApiHash)
+                                    app.telegramClient.updateCredentials(newApiId, newApiHash)
+                                    navController.popBackStack()
+                                },
+                                onBackClick = { navController.navigateUp() }
                             )
                         }
                     }

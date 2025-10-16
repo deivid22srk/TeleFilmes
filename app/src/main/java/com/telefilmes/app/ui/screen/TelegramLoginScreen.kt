@@ -19,7 +19,8 @@ import com.telefilmes.app.ui.viewmodel.TelegramViewModel
 @Composable
 fun TelegramLoginScreen(
     viewModel: TelegramViewModel,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    onConfigureApi: () -> Unit
 ) {
     val authState by viewModel.authState.collectAsState()
     
@@ -41,7 +42,8 @@ fun TelegramLoginScreen(
                 PhoneNumberInput(
                     onSendCode = { phoneNumber ->
                         viewModel.setPhoneNumber(phoneNumber)
-                    }
+                    },
+                    onConfigureApi = onConfigureApi
                 )
             }
             is TelegramAuthState.WaitingForCode -> {
@@ -64,7 +66,13 @@ fun TelegramLoginScreen(
             is TelegramAuthState.Error -> {
                 ErrorContent(
                     message = state.message,
-                    onRetry = {}
+                    onRetry = {},
+                    onConfigureApi = if (state.message.contains("UPDATE_APP_TO_LOGIN") || 
+                                        state.message.contains("406")) {
+                        onConfigureApi
+                    } else {
+                        null
+                    }
                 )
             }
         }
@@ -73,7 +81,8 @@ fun TelegramLoginScreen(
 
 @Composable
 private fun PhoneNumberInput(
-    onSendCode: (String) -> Unit
+    onSendCode: (String) -> Unit,
+    onConfigureApi: () -> Unit
 ) {
     var phoneNumber by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
@@ -123,6 +132,13 @@ private fun PhoneNumberInput(
             } else {
                 Text(stringResource(R.string.send_code))
             }
+        }
+        
+        OutlinedButton(
+            onClick = onConfigureApi,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("⚙️ Configurar Credenciais da API")
         }
     }
 }
@@ -243,7 +259,8 @@ private fun PasswordInput(
 @Composable
 private fun ErrorContent(
     message: String,
-    onRetry: () -> Unit
+    onRetry: () -> Unit,
+    onConfigureApi: (() -> Unit)? = null
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -260,8 +277,39 @@ private fun ErrorContent(
             style = MaterialTheme.typography.bodyMedium
         )
         
-        Button(onClick = onRetry) {
-            Text("Tentar Novamente")
+        if (onConfigureApi != null) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "⚠️ Credenciais Desatualizadas",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Text(
+                        text = "Este erro ocorre quando as credenciais da API do Telegram estão desatualizadas. Você precisa configurar suas próprias credenciais.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+            
+            Button(
+                onClick = onConfigureApi,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("⚙️ Configurar Credenciais da API")
+            }
+        } else {
+            Button(onClick = onRetry) {
+                Text("Tentar Novamente")
+            }
         }
     }
 }

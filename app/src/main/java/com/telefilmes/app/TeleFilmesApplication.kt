@@ -3,6 +3,7 @@ package com.telefilmes.app
 import android.app.Application
 import com.telefilmes.app.data.database.TeleFilmesDatabase
 import com.telefilmes.app.data.repository.MediaRepository
+import com.telefilmes.app.data.TelegramConfigRepository
 import com.telefilmes.app.telegram.TelegramClient
 
 class TeleFilmesApplication : Application() {
@@ -16,6 +17,8 @@ class TeleFilmesApplication : Application() {
             database.episodeDao()
         )
     }
+    
+    val telegramConfigRepository by lazy { TelegramConfigRepository(this) }
     
     val telegramClient by lazy { TelegramClient(this) }
     

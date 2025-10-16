@@ -13,4 +13,5 @@ sealed class Screen(val route: String) {
         fun createRoute(chatId: Long) = "chat/$chatId"
     }
     object TelegramLogin : Screen("telegram_login")
+    object TelegramApiConfig : Screen("telegram_api_config")
 }
