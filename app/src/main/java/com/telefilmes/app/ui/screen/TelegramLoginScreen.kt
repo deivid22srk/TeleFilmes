@@ -3,7 +3,7 @@ package com.telefilmes.app.ui.screen
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Telegram
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -82,7 +82,7 @@ private fun PhoneNumberInput(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Icon(
-            imageVector = Icons.Default.Telegram,
+            imageVector = Icons.Default.Phone,
             contentDescription = null,
             modifier = Modifier.size(80.dp),
             tint = MaterialTheme.colorScheme.primary
@@ -124,7 +124,7 @@ private fun CodeInput(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Icon(
-            imageVector = Icons.Default.Telegram,
+            imageVector = Icons.Default.Phone,
             contentDescription = null,
             modifier = Modifier.size(80.dp),
             tint = MaterialTheme.colorScheme.primary
@@ -166,7 +166,7 @@ private fun PasswordInput(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Icon(
-            imageVector = Icons.Default.Telegram,
+            imageVector = Icons.Default.Phone,
             contentDescription = null,
             modifier = Modifier.size(80.dp),
             tint = MaterialTheme.colorScheme.primary

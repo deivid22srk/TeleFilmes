@@ -3,6 +3,7 @@ package com.telefilmes.app.ui.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.telefilmes.app.data.model.Season
 import com.telefilmes.app.data.model.SeriesWithSeasons
