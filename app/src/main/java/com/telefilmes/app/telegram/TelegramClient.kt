@@ -230,7 +230,7 @@ class TelegramClient(private val context: Context) {
     fun loadChats() {
         scope.launch {
             try {
-                send(TdApi.GetChats(TdApi.ChatListMain(), 100))
+                send(TdApi.GetChats(TdApi.ChatListMain(), Long.MAX_VALUE, 0, 100))
                 Log.d(TAG, "Loading chats...")
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading chats", e)
